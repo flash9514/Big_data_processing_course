@@ -1,3 +1,4 @@
+import org.apache.spark.ml.classification.LogisticRegression
 import org.apache.spark.ml.feature.{StringIndexer, VectorAssembler}
 import org.apache.spark.sql.SparkSession
 
@@ -42,15 +43,34 @@ object Logistic_regression {
     features.show(100)
 
 
-    /*val labeledTransformer = new StringIndexer().setInputCol("diabet").setOutputCol("label")
+    val labeledTransformer = new StringIndexer().setInputCol("diabet").setOutputCol("label")
     val labeledFeatures = labeledTransformer.fit(features).transform(features)
-    labeledFeatures.show(100)*/
+    labeledFeatures.show(100)
 
 
     // Split data into training (60%) and test (40%)
 
-    val splits = features.randomSplit(Array(0.6, 0.4), seed = 11L)
+    val splits = labeledFeatures.randomSplit(Array(0.6, 0.4), seed = 11L)
     val trainingData = splits(0)
     val testData = splits(1)
+
+    val lr = new LogisticRegression()
+      .setMaxIter(100)
+      .setRegParam(0.3)
+      .setElasticNetParam(0.5)
+
+    //Train Model
+    val model = lr.fit(trainingData)
+
+    println(s"Coefficients: ${model.coefficients} Intercept: ${model.intercept}")
+
+    //Make predictions on test data
+    val predictions = model.transform(testData)
+
+    //Evaluate the precision and recall
+    val countProve = predictions.where("label == prediction").count()
+    val count = predictions.count()
+
+    println(s"Count of true predictions: $countProve Total Count: $count")
   }
 }
